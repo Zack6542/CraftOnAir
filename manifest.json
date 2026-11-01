@@ -1,0 +1,14 @@
+{
+  "name": "Month by Month",
+  "short_name": "Month by Month",
+  "description": "Our monthly podcast, summaries, and event calendar.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f3f1ec",
+  "theme_color": "#1f3bd8",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Month by Month</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="theme-color" content="#1f3bd8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Month by Month">
+<style>
+:root{--paper:#f3f1ec;--card:#fff;--ink:#16181f;--muted:#5d6272;--blue:#1f3bd8;--gold:#ffb81c;--line:#d9d6cc;--today:#e8ecff}
+@media (prefers-color-scheme:dark){:root{--paper:#14161d;--card:#1d2029;--ink:#f1f0ea;--muted:#a3a7b5;--blue:#8fa2ff;--gold:#ffc84a;--line:#33374a;--today:#262c52}}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.55 "Avenir Next",system-ui,-apple-system,"Segoe UI",sans-serif;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+header{padding:28px 20px 8px;max-width:960px;margin:0 auto}
+header h1{margin:0;font-size:15px;font-weight:600;color:var(--muted);letter-spacing:.01em}
+nav{position:sticky;top:0;z-index:5;background:var(--paper);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
+.tabs{display:flex;gap:4px;overflow-x:auto;max-width:960px;margin:0 auto;padding:6px 14px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:none;border:0;background:none;color:var(--muted);font:inherit;font-weight:600;padding:10px 14px;border-radius:999px;cursor:pointer;position:relative}
+.tabs button.has::after{content:"";position:absolute;left:50%;bottom:3px;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--gold)}
+.tabs button[aria-selected=true]{background:var(--blue);color:#fff}
+.tabs button[aria-selected=true].has::after{background:#fff}
+.tabs button:focus-visible,.cell:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+main{max-width:960px;margin:0 auto;padding:12px 20px 60px}
+h2{font-size:clamp(48px,12vw,104px);line-height:.95;margin:18px 0 22px;letter-spacing:-.03em;font-weight:800}
+h2 small{font-size:.28em;font-weight:600;color:var(--muted);letter-spacing:0;margin-left:10px}
+.video{aspect-ratio:16/9;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:grid;place-items:center;color:var(--muted);text-align:center;padding:20px}
+.video iframe{width:100%;height:100%;border:0}
+h3{font-size:22px;margin:40px 0 12px}
+.summary{max-width:68ch}
+.summary p{margin:0 0 1em}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.dow{background:var(--paper);text-align:center;font-size:13px;font-weight:600;color:var(--muted);padding:8px 0}
+.cell{background:var(--card);min-height:84px;padding:6px;font-size:13px;line-height:1.25;position:relative}
+.cell.blank{background:var(--paper)}
+.cell .n{font-weight:700;font-size:14px}
+.cell.today{background:var(--today)}
+.cell.today .n{color:var(--blue)}
+.chip{display:block;margin-top:4px;padding:2px 5px;background:var(--gold);color:#16181f;border-radius:4px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.agenda{list-style:none;padding:0;margin:18px 0 0}
+.agenda li{display:flex;gap:14px;padding:10px 0;border-bottom:1px solid var(--line)}
+.agenda b{min-width:64px;color:var(--blue)}
+@media (max-width:600px){
+ .cell{min-height:52px;padding:4px}
+ .chip{height:6px;width:6px;padding:0;border-radius:50%;display:inline-block;margin:4px 2px 0 0;font-size:0}
+}
+</style>
+</head>
+<body>
+<header><h1 id="site"></h1></header>
+<nav><div class="tabs" role="tablist" id="tabs"></div></nav>
+<main id="view"></main>
+<script src="episodes.js"></script>
+<script>
+const NAMES=["January","February","March","April","May","June","July","August","September","October","November","December"];
+const tabs=document.getElementById("tabs"), view=document.getElementById("view");
+document.getElementById("site").textContent=SITE.name;
+const now=new Date();
+let current=now.getFullYear()===SITE.year?now.getMonth()+1:10;
+
+function el(t,c,x){const e=document.createElement(t);if(c)e.className=c;if(x!==undefined)e.textContent=x;return e}
+
+function buildTabs(){
+  tabs.textContent="";
+  NAMES.forEach((n,i)=>{
+    const m=i+1,b=el("button",MONTHS[m]?"has":"",n.slice(0,3));
+    b.setAttribute("role","tab");b.setAttribute("aria-selected",m===current);b.setAttribute("aria-label",n);
+    b.onclick=()=>{current=m;location.hash=NAMES[i].toLowerCase();render()};
+    tabs.appendChild(b);
+  });
+  const sel=tabs.querySelector('[aria-selected="true"]');if(sel)sel.scrollIntoView({inline:"center",block:"nearest"});
+}
+
+function calendar(m,events){
+  const y=SITE.year,first=new Date(y,m-1,1).getDay(),days=new Date(y,m,0).getDate();
+  const grid=el("div","cal");grid.setAttribute("role","grid");
+  ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].forEach(d=>grid.appendChild(el("div","dow",d)));
+  for(let i=0;i<first;i++)grid.appendChild(el("div","cell blank"));
+  for(let d=1;d<=days;d++){
+    const iso=`${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+    const c=el("div","cell");
+    if(now.getFullYear()===y&&now.getMonth()+1===m&&now.getDate()===d)c.classList.add("today");
+    c.appendChild(el("div","n",d));
+    events.filter(e=>e.date===iso).forEach(e=>{const ch=el("span","chip",e.title);ch.title=e.title;c.appendChild(ch)});
+    grid.appendChild(c);
+  }
+  return grid;
+}
+
+function render(){
+  buildTabs();
+  const m=current,data=MONTHS[m],name=NAMES[m-1];
+  view.textContent="";
+  const h=el("h2",null,name);h.appendChild(el("small",null,String(SITE.year)));view.appendChild(h);
+  if(!data){view.appendChild(el("div","video","Coming soon. This month's episode, summary, and events will appear here."));return}
+  const v=el("div","video");
+  if(data.video){const f=document.createElement("iframe");f.src="https://www.youtube-nocookie.com/embed/"+data.video;f.title=name+" episode";f.allowFullscreen=true;f.allow="accelerometer;encrypted-media;picture-in-picture";v.textContent="";v.style.padding=0;v.appendChild(f)}
+  else v.textContent="The "+name+" episode isn't posted yet.";
+  view.appendChild(v);
+  view.appendChild(el("h3",null,"What happened in "+name));
+  const s=el("div","summary");
+  data.summary.split(/\n\s*\n/).forEach(p=>s.appendChild(el("p",null,p)));
+  view.appendChild(s);
+  view.appendChild(el("h3",null,name+" calendar"));
+  view.appendChild(calendar(m,data.events||[]));
+  const ul=el("ul","agenda");
+  (data.events||[]).slice().sort((a,b)=>a.date.localeCompare(b.date)).forEach(e=>{
+    const li=el("li"),d=new Date(e.date+"T00:00");
+    li.appendChild(el("b",null,NAMES[d.getMonth()].slice(0,3)+" "+d.getDate()));li.appendChild(el("span",null,e.title));ul.appendChild(li);
+  });
+  view.appendChild(ul);
+}
+
+const h=NAMES.findIndex(n=>n.toLowerCase()===location.hash.slice(1));
+if(h>-1)current=h+1;
+render();
+addEventListener("hashchange",()=>{const i=NAMES.findIndex(n=>n.toLowerCase()===location.hash.slice(1));if(i>-1){current=i+1;render()}});
+if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+</script>
+</body>
+</html>
