@@ -14,8 +14,8 @@ const MONTHS = {
     ]
   },
   11: {
-    video: "",
-    summary: "November's summary will go here.",
+    video: "https://youtu.be/cvxmSPdrxjc",
+    summary: "Meet Rayden Rose, programming team lead, and the Craft Coalition programming team.",
     events: [
       { date: "2026-11-03", title: "Sample: Election day, no school" },
       { date: "2026-11-20", title: "Sample: Robotics scrimmage" }
